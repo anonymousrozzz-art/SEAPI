@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nova Intelligence</title>
+    <title>Nova</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
                     colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
+                        nova: {
+                            50: '#f2fcf5',
+                            100: '#e1f8e8',
                             400: '#4ade80',
-                            500: '#22c55e', 
-                            600: '#16a34a', // Vibrant Green
-                            700: '#15803d',
-                            900: '#14532d',
+                            500: '#00cc66', 
+                            600: '#00a352',
+                            900: '#004d26',
                         },
+                        dark: '#111111',
                     }
                 }
             }
@@ -32,32 +36,37 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
         
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc; 
-            color: #0f172a; 
-            -webkit-font-smoothing: antialiased;
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111111;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        button, input { -webkit-tap-highlight-color: transparent; }
 
-        /* Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #f0f0f0; }
+        ::-webkit-scrollbar-thumb { background: #111; border: 2px solid #f0f0f0; }
+        ::-webkit-scrollbar-thumb:hover { background: #00cc66; }
         
-        /* Markdown Styles */
-        .prose p { margin-bottom: 0.6em; line-height: 1.6; color: #334155; }
-        .prose strong { color: #16a34a; font-weight: 700; }
-        .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; }
-        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.5em; color: #475569; }
-        .prose code { background: #f0fdf4; color: #15803d; padding: 2px 5px; border-radius: 4px; font-size: 0.9em; font-family: monospace; }
+        .prose p { margin-bottom: 0.8em; line-height: 1.7; color: #333; font-size: 0.95rem; }
+        .prose strong { color: #000; font-weight: 700; }
+        .prose h1, .prose h2, .prose h3 { color: #000; font-weight: 800; margin-top: 1.2em; margin-bottom: 0.6em; }
+        .prose ul { list-style-type: square; padding-left: 1.2em; color: #444; }
+        .prose code { background: #e1f8e8; color: #004d26; padding: 2px 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+        .anim-entry { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
         
+        ::selection { background: #00cc66; color: white; }
     </style>
 </head>
 <body>
@@ -67,18 +76,14 @@
         const { useState, useEffect, useRef } = React;
         const BACKEND_URL = ""; 
 
-        // --- ICONS ---
         const Icons = {
-            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
-            Sparkles: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/></svg>,
-            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
-            Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Zap: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         };
 
         const safeHostname = (url) => { try { return new URL(url).hostname.replace('www.', ''); } catch (e) { return "web"; } };
         const safeFavicon = (url) => { try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`; } catch (e) { return ""; } }
-
-        // --- COMPONENTS ---
 
         const AiResponse = ({ initialQuery }) => {
             const [response, setResponse] = useState("");
@@ -100,7 +105,7 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             messages: [
-                                { role: "system", content: "You are Nova. Provide a concise, plain text summary." },
+                                { role: "system", content: "You are Nova. Answer directly and concisely." },
                                 { role: "user", content: initialQuery }
                             ]
                         })
@@ -117,18 +122,17 @@
             if (!response && !loading) return null;
 
             return (
-                <div className="mb-8 animate-fade">
-                    <div className="bg-white border-2 border-brand-500 rounded-lg p-5 shadow-sm">
-                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
-                            <span className="text-brand-600"><Icons.Sparkles /></span>
-                            <span className="font-bold text-slate-800 text-sm uppercase tracking-wide">AI Summary</span>
+                <div className="mb-10 anim-entry">
+                    <div className="bg-nova-50 border-2 border-nova-500 p-6 md:p-8">
+                        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-nova-200">
+                            <div className="text-nova-600"><Icons.Zap /></div>
+                            <span className="font-mono text-sm font-bold text-nova-900 uppercase tracking-wider">Nova AI Protocol</span>
                         </div>
-                        <div className="prose prose-slate max-w-none text-sm">
+                        <div className="prose prose-lg max-w-none">
                             {loading ? (
-                                <div className="space-y-2 animate-pulse">
-                                    <div className="h-3 bg-slate-200 rounded w-full"></div>
-                                    <div className="h-3 bg-slate-200 rounded w-5/6"></div>
-                                    <div className="h-3 bg-slate-200 rounded w-4/6"></div>
+                                <div className="space-y-3 animate-pulse opacity-60">
+                                    <div className="h-4 bg-nova-200 w-full"></div>
+                                    <div className="h-4 bg-nova-200 w-3/4"></div>
                                 </div>
                             ) : (
                                 <div dangerouslySetInnerHTML={{__html: marked.parse(response)}} />
@@ -140,20 +144,18 @@
         };
 
         const SearchResult = ({ item }) => (
-            <div className="group mb-4 animate-fade">
-                <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-brand-500 hover:shadow-md transition-all duration-200 cursor-pointer" onClick={() => window.open(item.url, '_blank')}>
-                    <div className="flex items-center gap-2 mb-1">
-                        <img src={safeFavicon(item.url)} className="w-3.5 h-3.5 opacity-70" onError={(e) => e.target.style.display='none'}/>
-                        <span className="text-xs text-slate-500 font-medium truncate">{safeHostname(item.url)}</span>
+            <div className="group py-6 first:pt-0 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 px-2 -mx-2 anim-entry">
+                <div className="flex flex-col gap-1 cursor-pointer" onClick={() => window.open(item.url, '_blank')}>
+                    <div className="flex items-center gap-3 mb-1">
+                        <div className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded-sm">
+                            <img src={safeFavicon(item.url)} className="w-3.5 h-3.5 mix-blend-multiply" onError={(e) => e.target.style.display='none'}/>
+                        </div>
+                        <span className="font-mono text-xs text-gray-500 uppercase tracking-wide">{safeHostname(item.url)}</span>
                     </div>
-                    
-                    <h3 className="text-lg font-semibold text-brand-700 leading-snug mb-1 group-hover:underline decoration-brand-400 decoration-2">
+                    <h3 className="text-xl md:text-2xl font-bold text-dark group-hover:text-nova-600 leading-tight group-hover:underline decoration-2 underline-offset-4 transition-all">
                         {item.title}
                     </h3>
-                    
-                    <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">
-                        {item.snippet}
-                    </p>
+                    <p className="text-base text-gray-600 leading-relaxed mt-2 max-w-4xl">{item.snippet}</p>
                 </div>
             </div>
         );
@@ -168,7 +170,6 @@
             const [hasMore, setHasMore] = useState(true);
 
             const loadingRef = useRef(false);
-            const observerTarget = useRef(null);
 
             const performSearch = async (pageNum, term, isNewSearch) => {
                 if (loadingRef.current) return;
@@ -197,119 +198,117 @@
             const handleSearchSubmit = (e) => {
                 e.preventDefault();
                 if (!query.trim()) return;
-                
                 setActiveTerm(query);
                 setView("results");
                 setResults([]);
                 setPage(1);
                 setHasMore(true);
-                
                 performSearch(1, query, true);
             };
 
-            // Infinite Scroll
-            useEffect(() => {
-                const observer = new IntersectionObserver(
-                    entries => {
-                        if (entries[0].isIntersecting && view === 'results' && !loadingRef.current && hasMore) {
-                            setPage(prev => {
-                                const newPage = prev + 1;
-                                performSearch(newPage, activeTerm, false);
-                                return newPage;
-                            });
-                        }
-                    },
-                    { threshold: 0.1 }
-                );
-                if (observerTarget.current) observer.observe(observerTarget.current);
-                return () => observer.disconnect();
-            }, [view, activeTerm, hasMore]);
+            const loadMore = () => {
+                if (!loading && hasMore) {
+                    const nextPage = page + 1;
+                    setPage(nextPage);
+                    performSearch(nextPage, activeTerm, false);
+                }
+            };
 
             if (view === "home") {
                 return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
-                        <div className="w-full max-w-xl text-center space-y-6 animate-fade">
-                            <h1 className="text-6xl font-black tracking-tighter text-slate-900">
-                                Nova<span className="text-brand-500">.</span>
-                            </h1>
-
-                            <form onSubmit={handleSearchSubmit} className="relative w-full">
-                                <div className="relative flex items-center bg-white rounded-full border-2 border-slate-200 focus-within:border-brand-500 shadow-sm transition-all duration-200 overflow-hidden">
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+                        <div className="w-full max-w-2xl text-center anim-entry">
+                            <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-black mb-2 select-none">NOVA</h1>
+                            <p className="text-gray-500 font-mono text-sm uppercase tracking-[0.2em] mb-12">Intelligence Engine v1.0</p>
+                            <form onSubmit={handleSearchSubmit} className="relative w-full group">
+                                <div className="relative flex items-center">
                                     <input 
                                         type="text" 
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
-                                        placeholder="Search..." 
-                                        className="flex-1 bg-transparent border-none outline-none px-6 h-12 text-lg text-slate-800 placeholder:text-slate-300 font-medium"
+                                        placeholder="Type to search..." 
+                                        className="w-full bg-white border-4 border-black text-black text-xl md:text-2xl font-bold py-5 pl-6 pr-20 outline-none placeholder:text-gray-300 focus:border-nova-500 transition-colors duration-200"
                                         autoFocus
                                     />
-                                    <button type="submit" className="h-12 w-16 flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white transition-colors">
+                                    <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-black text-white hover:bg-nova-500 transition-colors duration-200">
                                         <Icons.ArrowRight />
                                     </button>
                                 </div>
                             </form>
+                            <div className="mt-16 flex justify-center gap-12 opacity-50">
+                                <div className="w-2 h-2 bg-black"></div>
+                                <div className="w-2 h-2 bg-nova-500"></div>
+                                <div className="w-2 h-2 bg-black"></div>
+                            </div>
                         </div>
                     </div>
                 );
             }
 
-            // RESULTS VIEW
             return (
-                <div className="min-h-screen bg-slate-50 flex flex-col">
-                    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-                        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
-                            <div className="font-extrabold text-2xl tracking-tighter cursor-pointer text-slate-900" onClick={() => setView("home")}>
-                                Nova<span className="text-brand-500">.</span>
-                            </div>
-                            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-2xl relative flex items-center">
-                                <div className="relative flex-1 flex items-center">
-                                    <input 
-                                        value={query} 
-                                        onChange={(e) => setQuery(e.target.value)} 
-                                        className="w-full bg-slate-100 border border-slate-200 focus:bg-white focus:border-brand-500 rounded-l-lg py-2 pl-4 pr-4 text-sm font-medium outline-none transition-all h-10" 
-                                        placeholder="Search again..."
-                                    />
-                                </div>
-                                <button type="submit" className="h-10 px-4 bg-brand-500 hover:bg-brand-600 text-white rounded-r-lg flex items-center justify-center transition-colors">
-                                    <Icons.Search />
+                <div className="min-h-screen bg-white flex flex-col">
+                    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-2 border-black">
+                        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center gap-4">
+                            <div className="font-black text-3xl tracking-tighter cursor-pointer select-none hover:text-nova-600 transition-colors" onClick={() => setView("home")}>NOVA</div>
+                            
+                            {/* FIXED FORM LAYOUT FOR MOBILE */}
+                            <form onSubmit={handleSearchSubmit} className="flex-1 w-full max-w-3xl flex items-stretch">
+                                {/* min-w-0 prevents input from forcing overflow */}
+                                <input 
+                                    value={query} 
+                                    onChange={(e) => setQuery(e.target.value)} 
+                                    className="flex-1 min-w-0 bg-gray-50 border-2 border-gray-200 focus:border-black py-2.5 px-4 text-base font-medium outline-none transition-colors rounded-none" 
+                                    placeholder="Refine search..."
+                                />
+                                {/* Reduced padding on mobile (px-4), normal on desktop (md:px-6) */}
+                                <button type="submit" className="px-4 md:px-6 bg-black text-white font-bold hover:bg-nova-600 transition-colors text-sm uppercase tracking-wide shrink-0">
+                                    Search
                                 </button>
                             </form>
                         </div>
                     </header>
 
-                    <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+                    <main className="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 py-8 md:py-12">
                         <AiResponse initialQuery={activeTerm} key={activeTerm} />
 
-                        <div className="mb-4 flex items-end justify-between border-b border-slate-200 pb-2">
-                            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                <Icons.Globe /> Results
-                            </h2>
+                        <div className="flex items-center gap-4 mb-8">
+                            <h2 className="text-sm font-mono font-bold text-black uppercase bg-white pr-4 z-10">Web Results</h2>
+                            <div className="flex-1 h-px bg-gray-200"></div>
                         </div>
 
-                        <div>
+                        <div className="flex flex-col gap-4">
                             {results.map((item, idx) => (
                                 <SearchResult key={`${idx}-${item.url}`} item={item} />
                             ))}
                             
                             {loading && (
-                                <div className="space-y-4 py-4">
-                                    {[1,2,3].map(i => (
-                                        <div key={i} className="bg-white p-4 rounded-lg border border-slate-100 animate-pulse">
-                                            <div className="h-3 w-32 bg-slate-200 rounded mb-2"></div>
-                                            <div className="h-5 w-2/3 bg-slate-200 rounded mb-2"></div>
-                                            <div className="h-12 w-full bg-slate-200 rounded"></div>
+                                <div className="space-y-8 py-8 opacity-50">
+                                    {[1,2].map(i => (
+                                        <div key={i} className="animate-pulse">
+                                            <div className="h-4 bg-gray-200 w-32 mb-4"></div>
+                                            <div className="h-6 bg-gray-200 w-3/4 mb-3"></div>
                                         </div>
                                     ))}
                                 </div>
                             )}
                             
                             {!loading && results.length === 0 && (
-                                <div className="text-center py-12 text-slate-500">
-                                    <p>No results found for "{activeTerm}".</p>
+                                <div className="py-20 border-2 border-dashed border-gray-300 text-center">
+                                    <h3 className="text-xl font-bold text-gray-400">0 Results Found</h3>
                                 </div>
                             )}
                             
-                            <div ref={observerTarget} className="h-8 w-full mt-4"></div>
+                            {!loading && hasMore && results.length > 0 && (
+                                <div className="pt-12 pb-20 flex justify-center">
+                                    <button 
+                                        onClick={loadMore}
+                                        className="group relative px-8 py-4 bg-white border-2 border-black text-black font-bold uppercase tracking-widest text-sm hover:bg-black hover:text-white transition-all active:translate-y-1"
+                                    >
+                                        Load More Results
+                                        <span className="absolute -right-2 -bottom-2 w-full h-full bg-nova-500 -z-10 group-hover:right-0 group-hover:bottom-0 transition-all"></span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </main>
                 </div>
