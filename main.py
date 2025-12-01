@@ -51,7 +51,8 @@ def google_search_api(query, page=1):
     if not GOOGLE_API_KEY or not GOOGLE_CX_ID:
         return None 
 
-    # Google CS API: 'start' parameter is 1-based index (Page 1 = 1, Page 2 = 11, etc.)
+    # Google CS API uses 'start' parameter (1-based index)
+    # Page 1 = 1, Page 2 = 11, Page 3 = 21...
     start_index = ((page - 1) * 10) + 1
     
     url = "https://www.googleapis.com/customsearch/v1"
@@ -64,7 +65,7 @@ def google_search_api(query, page=1):
     }
 
     try:
-        logger.info(f"Fetching Google: {query} (Start Index: {start_index})")
+        logger.info(f"Fetching Google: {query} (Page: {page}, Start: {start_index})")
         resp = requests.get(url, params=params, timeout=5)
         
         if resp.status_code == 200:
@@ -90,7 +91,7 @@ def google_search_api(query, page=1):
         return None
 
 def ddg_lite_search(query, page=1):
-    """DuckDuckGo Lite with simulated Pagination"""
+    """DuckDuckGo Lite with Pagination"""
     logger.info(f"Fetching DDG Lite (Background): {query} (Page {page})")
     url = "https://lite.duckduckgo.com/lite/"
     
@@ -129,7 +130,7 @@ def ddg_lite_search(query, page=1):
                     results.append(current_result)
                     current_result = {} 
             
-            # Filter out internal DDG links if any
+            # Filter internal links
             clean_results = [r for r in results if not "duckduckgo.com" in r['url']]
             return clean_results[:15]
             
@@ -151,7 +152,6 @@ def chat_proxy():
     
     try:
         data = request.json
-        # Only sending the first user message + system prompt to keep it single-turn
         messages = data.get("messages", [])
         
         resp = requests.post(
@@ -177,22 +177,19 @@ def search():
     
     final_results = []
     
-    # Execute both searches in parallel threads
+    # Execute both in parallel for speed
     with ThreadPoolExecutor(max_workers=2) as executor:
         future_google = executor.submit(google_search_api, q, page)
         future_ddg = executor.submit(ddg_lite_search, q, page)
         
-        # Wait for Google first
         google_results = future_google.result()
         
         if google_results and len(google_results) > 0:
             final_results = google_results
         else:
-            # If Google Failed, take DDG result
-            logger.info("Google failed or empty, using DDG result.")
+            # Google failed/empty, switch to DDG
             final_results = future_ddg.result()
 
-    # Fallback if both failed
     if not final_results and page == 1:
          final_results = [{
             "title": "No Results Found",
